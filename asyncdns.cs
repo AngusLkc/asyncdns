@@ -19,7 +19,7 @@ namespace AsyncDNSTest
     {
         public string value;//存储数据
         public int addtime; //添加时间
-        public int index;   //列表下表
+        public int index;   //列表下标
 
         public cache(string v, int t, int i)
         {
@@ -31,8 +31,8 @@ namespace AsyncDNSTest
 
     internal class LRUCache
     {
-        private List<string> exp_list; //key list
-        private Dictionary<string, cache> dict_cache; //key => cache(value,addtime,index)
+        private List<string> exp_list; //key_list
+        private Dictionary<string, cache> dict_cache; //key=>cache(value,addtime,index)
         private int interval;
         private int last_time;
 
@@ -128,7 +128,7 @@ namespace AsyncDNSTest
     }
 
     /// <summary>
-    /// 回调函数定义
+    /// 回调方法定义
     /// </summary>
     public delegate void Callback(string data, int error);
 
@@ -142,21 +142,21 @@ namespace AsyncDNSTest
         private LRUCache DnsCache;
 
         /// <summary>
-        /// 构造函数
+        /// 构造方法
         /// </summary>
         public AsyncDNS(string ServAddr)
         {
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             socket.Bind(new IPEndPoint(IPAddress.Parse("0.0.0.0"), 0));
             socket.ReceiveBufferSize = 4096;
-            socket.SendBufferSize = 8192;
+            socket.SendBufferSize = 4096;
             CB_Cache = new Dictionary<string, Callback>();
             DnsCache = new LRUCache(60000);
             RemotePoint = new IPEndPoint(IPAddress.Parse(ServAddr.Split(':')[0]), int.Parse(ServAddr.Split(':')[1]));
-            recvbuff = new byte[1024];
+            recvbuff = new byte[4096];
             IocpArg = new SocketAsyncEventArgs();
             IocpArg.Completed += RecvCB;
-            IocpArg.SetBuffer(recvbuff, 0, 1024);
+            IocpArg.SetBuffer(recvbuff, 0, 4096);
             IocpArg.RemoteEndPoint = RemotePoint;
             socket.ReceiveFromAsync(IocpArg);
         }
@@ -173,7 +173,7 @@ namespace AsyncDNSTest
                 Array.Copy(e.Buffer, buffer, size);
                 parse_response(buffer);
             }
-            IocpArg.SetBuffer(recvbuff, 0, 1024);
+            IocpArg.SetBuffer(recvbuff, 0, 4096);
             if (!socket.ReceiveFromAsync(IocpArg))
             {
                 RecvCB(null, IocpArg);
@@ -191,11 +191,11 @@ namespace AsyncDNSTest
                 return;
             }
             else if (!ChkNameValid(hostname))
-            {
+            {   //非法域名格式
                 cb(null, 1);
                 return;
             }
-            string key = hostname + '.' +qtype.ToString();
+            string key = hostname + '.' + qtype.ToString();
             string res = DnsCache.get(key);
             if (res!=null && res.Length > 1)
             {   //存在缓存
