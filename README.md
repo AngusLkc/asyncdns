@@ -11,4 +11,4 @@
 
 # 使用说明：
 AsyncDNS adns = new AsyncDNS("223.5.5.5:53");
-string ipaddr = adns.Lookup("www.baidu.com", QueryType.A, DnsLookupCallback);
+adns.Lookup("www.baidu.com", QueryType.A, DnsLookupCallback);
